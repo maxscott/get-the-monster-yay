@@ -59,6 +59,8 @@ requirejs([
     monster.x = 32 + (Math.random() * (canvas.width - 64));
     monster.y = 32 + (Math.random() * (canvas.height - 64));
     timeOfReset = new Date();
+    dashLeft = 0;
+    dashRight = 0;
   };
 
   var lastMove = {
@@ -67,6 +69,8 @@ requirejs([
     Down: true,
     Up: true
   };
+  var dashLeft;
+  var dashRight;
   var monsterMoves = function(modifier) {
     var greedy = {
       Right: false,
@@ -86,19 +90,44 @@ requirejs([
     if (hero.x > monster.x) greedy.Left = true;
     if (hero.x < monster.x) greedy.Right = true;
     if (hero.y < monster.y) greedy.Down = true; 
-    if (Math.abs(hero.x - monster.x) < 5) {
+
+    // could go either way, pick one
+    if (Math.abs(hero.x - monster.x) < 3) {
       greedy.Left = Math.random() < .5;
       greedy.Right = !greedy.Left;
     }
-    if (Math.abs(hero.y - monster.y) < 5) {
+    if (Math.abs(hero.y - monster.y) < 3) {
       greedy.Up = Math.random() < .5;
       greedy.Down = !greedy.Up;
     }
+
+    // you're against the wall, move away..
+    if (dashLeft > 0) {
+      greedy.Left = true;
+      greedy.Right = false;
+      dashLeft -= modifier;
+      console.log("left: " + dashLeft);
+    }
+    if ((monster.x + 5 > gameWidth - 64) && (monster.x - hero.x > 150)) {
+      dashLeft = (monster.x - hero.x) / monster.speed;
+      dashRight = 0;
+    }
+    if (dashRight > 0) {
+      greedy.Right = true;
+      greedy.Left = false;
+      dashRight -= modifier;
+      console.log("right: " + dashRight);
+    }
+    if ((monster.x - 5 < 64) && (hero.x - monster.x > 150)) {
+      dashRight = (hero.x - monster.x) / monster.speed;
+      dashLeft = 0;
+    }
+
     // which way is the hero going
-    // if (herosLastMoves[0].y < hero.y) herosGoing.Up = true;
-    // if (herosLastMoves[0].x > hero.x) herosGoing.Left = true;
-    // if (herosLastMoves[0].x < hero.x) herosGoing.Right = true;
-    // if (herosLastMoves[0].y > hero.y) herosGoing.Down = true;
+    if (herosLastMoves[0].y < hero.y) herosGoing.Up = true;
+    if (herosLastMoves[0].x > hero.x) herosGoing.Left = true;
+    if (herosLastMoves[0].x < hero.x) herosGoing.Right = true;
+    if (herosLastMoves[0].y > hero.y) herosGoing.Down = true;
 
     for(move in greedy){
       // if(greedy[move]) {
@@ -107,18 +136,10 @@ requirejs([
       //   greedy[move] = lastMove[move] && (Math.random() < .90);
       // }
     }
-    if (greedy.Up) {
-      monster.y -= monster.speed * modifier;
-    }
-    if (greedy.Left) {
-      monster.x -= monster.speed * modifier;
-    }
-    if (greedy.Right) {
-      monster.x += monster.speed * modifier;
-    }
-    if (greedy.Down) {
-      monster.y += monster.speed * modifier;
-    }
+    if (greedy.Up) monster.y -= monster.speed * modifier;
+    if (greedy.Left) monster.x -= monster.speed * modifier;
+    if (greedy.Right) monster.x += monster.speed * modifier;
+    if (greedy.Down) monster.y += monster.speed * modifier;
     lastMove = greedy;
   }
 
@@ -132,6 +153,13 @@ requirejs([
     if(herosLastMoves.push({x: hero.x, y: hero.y}) > 10) {
       herosLastMoves.splice(0, 1);
     }
+  }
+
+  var characterHitsWalls = function(character) {
+    character.x = Math.min(gameWidth - 64, character.x); 
+    character.y = Math.min(gameHeight - 64, character.y);
+    character.x = Math.max(32, character.x);
+    character.y = Math.max(32, character.y);
   }
 
   // update game objects
@@ -150,13 +178,6 @@ requirejs([
       ++monstersCaught;
       reset();
     }
-  }
-
-  var characterHitsWalls = function(character) {
-    character.x = Math.min(gameWidth - 64, character.x); 
-    character.y = Math.min(gameHeight - 64, character.y);
-    character.x = Math.max(32, character.x);
-    character.y = Math.max(32, character.y);
   }
 
   var scoreAlpha = 1;
