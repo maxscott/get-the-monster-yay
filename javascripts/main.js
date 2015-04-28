@@ -16,13 +16,13 @@ requirejs([
   // Game objects
   var hero = {
     imgUrl: 'images/hero.png',
-    speed: 180,
+    speed: 230,
     x: 0,
     y: 0
   };
   var monster = {
     imgUrl: 'images/monster.png',
-    speed: 170,
+    speed: 250,
     x: 0,
     y: 0
   };
@@ -61,6 +61,8 @@ requirejs([
     timeOfReset = new Date();
     dashLeft = 0;
     dashRight = 0;
+    dashUp = 0;
+    dashDown = 0;
   };
 
   var lastMove = {
@@ -71,6 +73,8 @@ requirejs([
   };
   var dashLeft;
   var dashRight;
+  var dashUp;
+  var dashDown;
   var monsterMoves = function(modifier) {
     var greedy = {
       Right: false,
@@ -102,11 +106,11 @@ requirejs([
     }
 
     // you're against the wall, move away..
+    // this is so inefficient, it Hurts
     if (dashLeft > 0) {
       greedy.Left = true;
       greedy.Right = false;
       dashLeft -= modifier;
-      console.log("left: " + dashLeft);
     }
     if ((monster.x + 5 > gameWidth - 64) && (monster.x - hero.x > 150)) {
       dashLeft = (monster.x - hero.x) / monster.speed;
@@ -116,13 +120,20 @@ requirejs([
       greedy.Right = true;
       greedy.Left = false;
       dashRight -= modifier;
-      console.log("right: " + dashRight);
     }
     if ((monster.x - 5 < 64) && (hero.x - monster.x > 150)) {
       dashRight = (hero.x - monster.x) / monster.speed;
       dashLeft = 0;
     }
-
+    if (dashUp > 0) {
+      greedy.Up = true;
+      greedy.Down = false;
+      dashUp -= modifier;
+    }
+    if ((monster.y - 5 < 64) && (hero.y - monster.y > 150)) {
+      dashUp = (hero.y - monster.y) / monster.speed;
+      dashDown = 0;
+    }
     // which way is the hero going
     if (herosLastMoves[0].y < hero.y) herosGoing.Up = true;
     if (herosLastMoves[0].x > hero.x) herosGoing.Left = true;
